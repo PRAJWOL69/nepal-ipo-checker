@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- PWA / Add to Home Screen meta tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="IPO Checker">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a5276">
+    <meta name="description" content="Check Nepal IPO allotment results for multiple BOIDs at once">
+    
+    <!-- Favicon as inline SVG data URI - no external request -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231a5276'/><text x='50' y='55' text-anchor='middle' dominant-baseline='middle' font-size='50'>📋</text></svg>">
+    
+    <title>Nepal IPO Bulk Checker</title>
+    
+    <style>
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --green: #27ae60;
+            --green-bg: #e8f8f0;
+            --red: #c0392b;
+            --red-bg: #fdeaea;
+            --gray: #7f8c8d;
+            --gray-bg: #f0f0f0;
+            --blue: #1a5276;
+            --blue-light: #2980b9;
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --text-light: #636e72;
+            --border: #dfe6e9;
+            --radius: 10px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08);
+            /* Safe area insets for notch devices */
+            --sat: env(safe-area-inset-top, 0px);
+            --sab: env(safe-area-inset-bottom, 0px);
+        }
+
+        html {
+            font-size: 16px;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            padding-top: var(--sat);
+            padding-bottom: var(--sab);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ===== LAYOUT ===== */
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 16px;
+            padding-bottom: calc(16px + var(--sab));
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            text-align: center;
+            padding: 20px 0 16px;
+        }
+
+        .header h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--blue);
+            letter-spacing: -0.3px;
+        }
+
+        .header p {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        /* ===== COMPANY SELECTOR ===== */
+        .company-section {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 14px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .company-section label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .company-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: var(--text);
+            background: var(--bg);
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23636e72' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            cursor: pointer;
+        }
+
+        .company-select:focus {
+            outline: none;
+            border-color: var(--blue-light);
+        }
+
+        /* ===== INPUT SECTION ===== */
+        .input-section {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 14px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .input-section label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-hint {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-bottom: 8px;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 140px;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: "SF Mono", "Menlo", monospace;
+            line-height: 1.6;
+            resize: vertical;
+            color: var(--text);
+            background: var(--bg);
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--blue-light);
+        }
+
+        textarea::placeholder {
+            color: #b2bec3;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 0.85rem;
+        }
+
+        .input-count {
+            text-align: right;
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-top: 6px;
+        }
+
+        .input-count.over-limit {
+            color: var(--red);
+            font-weight: 600;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.1s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            flex: 1;
+            background: var(--blue);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--gray-bg);
+            color: var(--text);
+            min-width: 44px;
+        }
+
+        .btn-copy {
+            background: var(--green-bg);
+            color: var(--green);
+        }
+
+        /* ===== MODE TOGGLE ===== */
+        .mode-section {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .mode-label {
+            font-size: 0.82rem;
+            color: var(--text);
+        }
+
+        .mode-label small {
+            display: block;
+            color: var(--text-light);
+            font-size: 0.72rem;
+            margin-top: 2px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #ccc;
+            border-radius: 28px;
+            transition: background 0.2s;
+        }
+
+        .toggle-slider::before {
+            content: "";
+            position: absolute;
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--blue);
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(20px);
+        }
+
+        /* ===== PROGRESS ===== */
+        .progress-section {
+            display: none;
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 14px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-bar-track {
+            width: 100%;
+            height: 6px;
+            background: var(--gray-bg);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--blue);
+            border-radius: 3px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+
+        .progress-text {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            text-align: center;
+        }
+
+        /* ===== RESULTS ===== */
+        .results-section {
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .results-header h2 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .results-summary {
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+
+        .result-item {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--gray);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .result-item.allotted {
+            border-left-color: var(--green);
+            background: var(--green-bg);
+        }
+
+        .result-item.not-allotted {
+            border-left-color: var(--red);
+            background: var(--red-bg);
+        }
+
+        .result-item.error {
+            border-left-color: var(--gray);
+            background: var(--gray-bg);
+        }
+
+        .result-boid {
+            font-family: "SF Mono", "Menlo", monospace;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text);
+            word-break: break-all;
+        }
+
+        .result-status {
+            font-size: 0.78rem;
+            font-weight: 700;
+            white-space: nowrap;
+            padding: 4px 10px;
+            border-radius: 20px;
+            flex-shrink: 0;
+        }
+
+        .result-item.allotted .result-status {
+            background: var(--green);
+            color: white;
+        }
+
+        .result-item.not-allotted .result-status {
+            background: var(--red);
+            color: white;
+        }
+
+        .result-item.error .result-status {
+            background: var(--gray);
+            color: white;
+        }
+
+        .result-detail {
+            font-size: 0.72rem;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+
+        /* ===== FALLBACK LINKS ===== */
+        .fallback-links .result-item {
+            cursor: pointer;
+        }
+
+        .fallback-links .result-item a {
+            color: var(--blue-light);
+            text-decoration: none;
+            font-size: 0.78rem;
+        }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            bottom: calc(20px + var(--sab));
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            padding: 20px 0 10px;
+            font-size: 0.7rem;
+            color: var(--text-light);
+        }
+
+        .footer a {
+            color: var(--blue-light);
+            text-decoration: none;
+        }
+
+        /* ===== SPINNER ===== */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        /* ===== CONFIG SECTION ===== */
+        .config-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .config-input {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.78rem;
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        .config-input:focus {
+            outline: none;
+            border-color: var(--blue-light);
+        }
+
+        .config-label {
+            font-size: 0.72rem;
+            color: var(--text-light);
+            margin-top: 8px;
+            display: block;
+        }
+
+        /* Collapsible settings */
+        .settings-toggle {
+            font-size: 0.78rem;
+            color: var(--blue-light);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .settings-content {
+            display: none;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        .settings-content.open {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📋 Nepal IPO Bulk Checker</h1>
+            <p>Check multiple BOID results at once</p>
+        </div>
+
+        <!-- Company Selection -->
+        <div class="company-section">
+            <label for="companySelect">Select IPO Company</label>
+            <select id="companySelect" class="company-select">
+                <option value="" disabled selected>-- Choose a company --</option>
+                <!-- Companies will be populated dynamically or manually -->
+            </select>
+            <button class="settings-toggle" id="settingsToggle" type="button">⚙ Advanced Settings</button>
+            <div class="settings-content" id="settingsContent">
+                <label class="config-label" for="companyId">Company/Issue ID (from CDSC/MeroShare):</label>
+                <input type="text" id="companyId" class="config-input" placeholder="e.g., 512">
+                <label class="config-label" for="apiEndpoint">API Endpoint:</label>
+                <input type="text" id="apiEndpoint" class="config-input" 
+                       placeholder="https://your-proxy.vercel.app/api/check" 
+                       value="">
+            </div>
+        </div>
+
+        <!-- Mode Toggle -->
+        <div class="mode-section">
+            <div class="mode-label">
+                Auto-check via proxy
+                <small id="modeDescription">Results fetched automatically</small>
+            </div>
+            <label class="toggle-switch">
+                <input type="checkbox" id="modeToggle" checked>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+
+        <!-- Input Section -->
+        <div class="input-section">
+            <label for="boidInput">Enter BOIDs / Application Numbers</label>
+            <p class="input-hint">One per line · Max 20 entries</p>
+            <textarea id="boidInput" placeholder="1301234567890001&#10;1301234567890002&#10;1301234567890003" 
+                      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+            <div class="input-count" id="inputCount">0 / 20 entries</div>
+            <div class="btn-row">
+                <button class="btn btn-primary" id="checkBtn" type="button">Check Results</button>
+                <button class="btn btn-secondary" id="clearBtn" type="button" title="Clear">✕</button>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="progress-section" id="progressSection">
+            <div class="progress-bar-track">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Checking 0 / 0...</div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">
+                <h2>Results</h2>
+                <div>
+                    <span class="results-summary" id="resultsSummary"></span>
+                </div>
+            </div>
+            <div class="btn-row" style="margin-bottom: 12px; margin-top: 0;">
+                <button class="btn btn-copy" id="copyBtn" type="button">📋 Copy Results</button>
+            </div>
+            <div id="resultsList"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            Nepal IPO Bulk Checker &middot; No data stored &middot; 
+            <a href="https://iporesult.cdsc.com.np/" target="_blank" rel="noopener">CDSC Official</a>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Service Worker registration for PWA -->
+    <script>
+        // Register minimal service worker for Add to Home Screen
+        if ('serviceWorker' in navigator) {
+            // We'll skip SW registration since we're a single file
+            // but the meta tags above enable Add to Home Screen on iOS
+        }
+    </script>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // ===== CONFIGURATION =====
+        const CONFIG = {
+            maxEntries: 20,
+            delayBetweenRequests: 800,  // ms between requests (rate limiting)
+            requestTimeout: 15000,       // 15s timeout per request
+            // Default proxy endpoint - change this to your deployed proxy URL
+            defaultApiEndpoint: '',
+            // Known IPO companies (update this list as needed)
+            companies: [
+                // Add active IPO companies here. Format:
+                // { id: 'ISSUE_ID', name: 'Company Name (Type)', scrip: 'SCRIP' }
+                // Example entries:
+                { id: '0', name: '-- Add companies when IPO is active --', scrip: '' },
+            ]
+        };
+
+        // ===== DOM REFERENCES =====
+        const $ = (sel) => document.querySelector(sel);
+        const boidInput = $('#boidInput');
+        const inputCount = $('#inputCount');
+        const checkBtn = $('#checkBtn');
+        const clearBtn = $('#clearBtn');
+        const copyBtn = $('#copyBtn');
+        const progressSection = $('#progressSection');
+        const progressFill = $('#progressFill');
+        const progressText = $('#progressText');
+        const resultsSection = $('#resultsSection');
+        const resultsList = $('#resultsList');
+        const resultsSummary = $('#resultsSummary');
+        const modeToggle = $('#modeToggle');
+        const modeDescription = $('#modeDescription');
+        const companySelect = $('#companySelect');
+        const companyIdInput = $('#companyId');
+        const apiEndpointInput = $('#apiEndpoint');
+        const settingsToggle = $('#settingsToggle');
+        const settingsContent = $('#settingsContent');
+        const toast = $('#toast');
+
+        // ===== STATE =====
+        let isChecking = false;
+        let results = [];
+        let abortController = null;
+
+        // ===== INITIALIZATION =====
+        function init() {
+            populateCompanies();
+            loadSavedSettings();
+            bindEvents();
+            updateEntryCount();
+        }
+
+        function populateCompanies() {
+            CONFIG.companies.forEach(company => {
+                const opt = document.createElement('option');
+                opt.value = company.id;
+                opt.textContent = company.name;
+                opt.dataset.scrip = company.scrip || '';
+                companySelect.appendChild(opt);
+            });
+        }
+
+        function loadSavedSettings() {
+            try {
+                const saved = localStorage.getItem('ipo_checker_settings');
+                if (saved) {
+                    const s = JSON.parse(saved);
+                    if (s.apiEndpoint) apiEndpointInput.value = s.apiEndpoint;
+                    if (s.companyId) companyIdInput.value = s.companyId;
+                    if (typeof s.autoMode === 'boolean') modeToggle.checked = s.autoMode;
+                }
+            } catch(e) { /* ignore */ }
+            updateModeDescription();
+        }
+
+        function saveSettings() {
+            try {
+                localStorage.setItem('ipo_checker_settings', JSON.stringify({
+                    apiEndpoint: apiEndpointInput.value.trim(),
+                    companyId: companyIdInput.value.trim(),
+                    autoMode: modeToggle.checked
+                }));
+            } catch(e) { /* ignore */ }
+        }
+
+        // ===== EVENT BINDING =====
+        function bindEvents() {
+            boidInput.addEventListener('input', updateEntryCount);
+            checkBtn.addEventListener('click', handleCheck);
+            clearBtn.addEventListener('click', handleClear);
+            copyBtn.addEventListener('click', handleCopy);
+            modeToggle.addEventListener('change', () => {
+                updateModeDescription();
+                saveSettings();
+            });
+            companySelect.addEventListener('change', () => {
+                const selected = companySelect.options[companySelect.selectedIndex];
+                if (selected.value && selected.value !== '0') {
+                    companyIdInput.value = selected.value;
+                    saveSettings();
+                }
+            });
+            settingsToggle.addEventListener('click', () => {
+                settingsContent.classList.toggle('open');
+            });
+            apiEndpointInput.addEventListener('change', saveSettings);
+            companyIdInput.addEventListener('change', saveSettings);
+
+            // Prevent zoom on double-tap for buttons
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    btn.click();
+                });
+            });
+        }
+
+        function updateModeDescription() {
+            if (modeToggle.checked) {
+                modeDescription.textContent = 'Results fetched automatically';
+            } else {
+                modeDescription.textContent = 'Opens CDSC links manually';
+            }
+        }
+
+        // ===== ENTRY COUNT =====
+        function updateEntryCount() {
+            const entries = parseEntries();
+            const count = entries.length;
+            inputCount.textContent = `${count} / ${CONFIG.maxEntries} entries`;
+            inputCount.classList.toggle('over-limit', count > CONFIG.maxEntries);
+        }
+
+        // ===== PARSE INPUT =====
+        function parseEntries() {
+            return boidInput.value
+                .split('\n')
+                .map(line => line.trim().replace(/\s+/g, ''))
+                .filter(line => line.length > 0);
+        }
+
+        // ===== VALIDATE BOID =====
+        function validateBoid(boid) {
+            // BOID is typically 16 digits starting with 130
+            // Application numbers can vary
+            // Accept numeric strings of 4-20 characters
+            if (!/^\d{4,20}$/.test(boid)) {
+                return { valid: false, reason: 'Invalid format (must be 4-20 digits)' };
+            }
+            return { valid: true };
+        }
+
+        // ===== MAIN CHECK HANDLER =====
+        async function handleCheck() {
+            if (isChecking) {
+                // Cancel ongoing check
+                if (abortController) abortController.abort();
+                isChecking = false;
+                checkBtn.innerHTML = 'Check Results';
+                progressSection.classList.remove('active');
+                return;
+            }
+
+            const entries = parseEntries();
+
+            if (entries.length === 0) {
+                showToast('Please enter at least one BOID');
+                boidInput.focus();
+                return;
+            }
+
+            if (entries.length > CONFIG.maxEntries) {
+                showToast(`Maximum ${CONFIG.maxEntries} entries allowed`);
+                return;
+            }
+
+            const autoMode = modeToggle.checked;
+            const apiEndpoint = apiEndpointInput.value.trim();
+            const companyId = companyIdInput.value.trim();
+
+            if (autoMode && !apiEndpoint) {
+                showToast('Set API endpoint in Advanced Settings or use manual mode');
+                settingsContent.classList.add('open');
+                return;
+            }
+
+            // Start checking
+            isChecking = true;
+            results = [];
+            resultsList.innerHTML = '';
+            resultsSection.classList.remove('active');
+            checkBtn.innerHTML = '<span class="spinner"></span> Cancel';
+
+            if (autoMode) {
+                await checkAutoMode(entries, apiEndpoint, companyId);
+            } else {
+                checkFallbackMode(entries, companyId);
+            }
+
+            // Done
+            isChecking = false;
+            checkBtn.innerHTML = 'Check Results';
+            progressSection.classList.remove('active');
+            showResultsSummary();
+        }
+
+        // ===== AUTO MODE: Fetch via proxy =====
+        async function checkAutoMode(entries, apiEndpoint, companyId) {
+            progressSection.classList.add('active');
+            abortController = new AbortController();
+
+            for (let i = 0; i < entries.length; i++) {
+                if (!isChecking) break;
+
+                const boid = entries[i];
+                const progress = ((i + 1) / entries.length) * 100;
+                progressFill.style.width = progress + '%';
+                progressText.textContent = `Checking ${i + 1} / ${entries.length}...`;
+
+                // Validate
+                const validation = validateBoid(boid);
+                if (!validation.valid) {
+                    addResult(boid, 'error', validation.reason);
+                    continue;
+                }
+
+                try {
+                    const result = await fetchResult(boid, apiEndpoint, companyId, abortController.signal);
+                    addResult(boid, result.status, result.message);
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        addResult(boid, 'error', 'Cancelled');
+                        break;
+                    }
+                    addResult(boid, 'error', err.message || 'Request failed');
+                }
+
+                // Rate limiting delay (skip on last entry)
+                if (i < entries.length - 1 && isChecking) {
+                    await delay(CONFIG.delayBetweenRequests);
+                }
+            }
+        }
+
+        // ===== FETCH SINGLE RESULT =====
+        async function fetchResult(boid, apiEndpoint, companyId, signal) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), CONFIG.requestTimeout);
+
+            // Combine abort signals
+            if (signal) {
+                signal.addEventListener('abort', () => controller.abort());
+            }
+
+            try {
+                const url = new URL(apiEndpoint);
+                url.searchParams.set('boid', boid);
+                if (companyId) url.searchParams.set('companyId', companyId);
+
+                const response = await fetch(url.toString(), {
+                    method: 'GET',
+                    signal: controller.signal,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Expected response format:
+                // { status: 'allotted' | 'not-allotted' | 'error', message: '...' }
+                return {
+                    status: data.status || 'error',
+                    message: data.message || ''
+                };
+            } catch (err) {
+                clearTimeout(timeoutId);
+                throw err;
+            }
+        }
+
+        // ===== FALLBACK MODE: Generate links =====
+        function checkFallbackMode(entries, companyId) {
+            resultsList.classList.add('fallback-links');
+            
+            entries.forEach(boid => {
+                const validation = validateBoid(boid);
+                if (!validation.valid) {
+                    addResult(boid, 'error', validation.reason);
+                    return;
+                }
+
+                // Generate CDSC check URL
+                // The actual URL format depends on the CDSC/MeroShare IPO result page
+                const cdscUrl = buildCdscUrl(boid, companyId);
+                addFallbackResult(boid, cdscUrl);
+            });
+
+            resultsSection.classList.add('active');
+        }
+
+        function buildCdscUrl(boid, companyId) {
+            // CDSC IPO Result URL format
+            // This URL structure should be updated based on current CDSC website
+            const baseUrl = 'https://iporesult.cdsc.com.np/result/companyShares/file498';
+            const params = new URLSearchParams();
+            params.set('bession', boid); // CDSC uses 'bession' for BOID
+            if (companyId) params.set('companyShare', companyId);
+            return `${baseUrl}?${params.toString()}`;
+        }
+
+        // ===== ADD RESULT TO LIST =====
+        function addResult(boid, status, message) {
+            const result = { boid, status, message };
+            results.push(result);
+
+            const statusClass = status === 'allotted' ? 'allotted' :
+                               status === 'not-allotted' ? 'not-allotted' : 'error';
+            
+            const statusLabel = status === 'allotted' ? '✓ Allotted' :
+                               status === 'not-allotted' ? '✗ Not Allotted' : '⚠ Error';
+
+            const div = document.createElement('div');
+            div.className = `result-item ${statusClass}`;
+            div.innerHTML = `
+                <div>
+                    <div class="result-boid">${escapeHtml(boid)}</div>
+                    ${message ? `<div class="result-detail">${escapeHtml(message)}</div>` : ''}
+                </div>
+                <span class="result-status">${statusLabel}</span>
+            `;
+            resultsList.appendChild(div);
+            resultsSection.classList.add('active');
+
+            // Auto-scroll to latest result
+            div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function addFallbackResult(boid, url) {
+            const result = { boid, status: 'link', message: url };
+            results.push(result);
+
+            const div = document.createElement('div');
+            div.className = 'result-item';
+            div.innerHTML = `
+                <div>
+                    <div class="result-boid">${escapeHtml(boid)}</div>
+                    <a href="${escapeHtml(url)}" target="_blank" rel="noopener">Open result page →</a>
+                </div>
+                <span class="result-status" style="background: var(--blue-light); color: white;">Open</span>
+            `;
+            
+            // Make the whole row clickable
+            div.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'A') {
+                    window.open(url, '_blank', 'noopener');
+                }
+            });
+
+            resultsList.appendChild(div);
+            resultsSection.classList.add('active');
+        }
+
+        // ===== RESULTS SUMMARY =====
+        function showResultsSummary() {
+            const allotted = results.filter(r => r.status === 'allotted').length;
+            const notAllotted = results.filter(r => r.status === 'not-allotted').length;
+            const errors = results.filter(r => r.status === 'error').length;
+            const links = results.filter(r => r.status === 'link').length;
+
+            const parts = [];
+            if (allotted > 0) parts.push(`${allotted} allotted`);
+            if (notAllotted > 0) parts.push(`${notAllotted} not allotted`);
+            if (errors > 0) parts.push(`${errors} errors`);
+            if (links > 0) parts.push(`${links} links`);
+
+            resultsSummary.textContent = parts.join(' · ') || `${results.length} checked`;
+        }
+
+        // ===== CLEAR =====
+        function handleClear() {
+            boidInput.value = '';
+            resultsList.innerHTML = '';
+            resultsSection.classList.remove('active');
+            resultsList.classList.remove('fallback-links');
+            results = [];
+            updateEntryCount();
+            boidInput.focus();
+            showToast('Cleared');
+        }
+
+        // ===== COPY RESULTS =====
+        function handleCopy() {
+            if (results.length === 0) {
+                showToast('No results to copy');
+                return;
+            }
+
+            const text = results.map(r => {
+                const status = r.status === 'allotted' ? 'ALLOTTED' :
+                              r.status === 'not-allotted' ? 'NOT ALLOTTED' :
+                              r.status === 'link' ? 'LINK' : 'ERROR';
+                const detail = r.message ? ` (${r.message})` : '';
+                return `${r.boid} - ${status}${detail}`;
+            }).join('\n');
+
+            // Use clipboard API with fallback
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('Results copied!');
+                }).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Results copied!');
+            } catch(e) {
+                showToast('Copy failed - select manually');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        // ===== UTILITIES =====
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function showToast(message, duration = 2500) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+
+        // ===== START =====
+        init();
+
+    })();
+    </script>
+
+    <!-- Web App Manifest (inline for single-file deployment) -->
+    <script>
+        // Create manifest blob for PWA support
+        const manifest = {
+            name: "Nepal IPO Bulk Checker",
+            short_name: "IPO Checker",
+            description: "Check multiple IPO results at once",
+            start_url: ".",
+            display: "standalone",
+            background_color: "#f5f7fa",
+            theme_color: "#1a5276",
+            icons: []
+        };
+        const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+        const manifestUrl = URL.createObjectURL(blob);
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = manifestUrl;
+        document.head.appendChild(link);
+    </script>
+</body>
+</html>
